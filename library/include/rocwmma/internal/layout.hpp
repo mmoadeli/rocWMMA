@@ -32,11 +32,11 @@ namespace rocwmma
 {
     namespace DataLayout
     {
-        template <typename DataOrientation>
+        template <sycl::ext::oneapi::experimental::matrix::layout DataOrientation>
         using Array1d = typename ::rocwmma::detail::template DataSpace<DataOrientation>;
 
-        using RowMajor = Array1d<row_major>;
-        using ColMajor = Array1d<col_major>;
+        using RowMajor = Array1d<sycl::ext::oneapi::experimental::matrix::layout::row_major>;
+        using ColMajor = Array1d<sycl::ext::oneapi::experimental::matrix::layout::col_major>;
 
     } // namespace DataLayout
 
@@ -191,11 +191,11 @@ namespace rocwmma
         template <uint32_t BlockDim,
                   uint32_t BlockK,
                   typename DataT,
-                  typename DataLayout,
+                  sycl::ext::oneapi::experimental::matrix::layout DataLayout,
                   uint32_t VectorWidth,
                   uint32_t MaxVectorWidth>
         struct ColNT : public std::conditional_t<
-                           std::is_same<DataLayout, col_major>::value,
+                           DataLayout == sycl::ext::oneapi::experimental::matrix::layout::col_major,
                            detail::ColOrthoVW<BlockDim, BlockK, DataT, 1, MaxVectorWidth>,
                            detail::ColOrthoVW<BlockDim, BlockK, DataT, VectorWidth, MaxVectorWidth>>
         {
@@ -208,7 +208,7 @@ namespace rocwmma
                 // elements in both row_major or col_major data layouts.
                 // This layout cannot support for VW > 1 in col_major data layout otherwise the
                 // ordering is broken.
-                static_assert(!(std::is_same<DataLayout, col_major>::value && VectorWidth > 1),
+                static_assert(!((DataLayout == sycl::ext::oneapi::experimental::matrix::layout::col_major) && VectorWidth > 1),
                               "ColNT in col_major does not support VectorWidth > 1");
             };
         };
@@ -320,11 +320,11 @@ namespace rocwmma
         template <uint32_t BlockDim,
                   uint32_t BlockK,
                   typename DataT,
-                  typename DataLayout,
+                  sycl::ext::oneapi::experimental::matrix::layout DataLayout,
                   uint32_t VectorWidth,
                   uint32_t MaxVectorWidth>
         struct RowNT : public std::conditional_t<
-                           std::is_same<DataLayout, col_major>::value,
+                           DataLayout == sycl::ext::oneapi::experimental::matrix::layout::col_major,
                            detail::RowOrthoVW<BlockDim, BlockK, DataT, VectorWidth, MaxVectorWidth>,
                            detail::RowOrthoVW<BlockDim, BlockK, DataT, 1, MaxVectorWidth>>
         {
@@ -337,7 +337,7 @@ namespace rocwmma
                 // elements in both in row_major or col_major data layouts.
                 // This layout cannot support for VW > 1 in row_major data layout otherwise the
                 // ordering is broken.
-                static_assert(!(std::is_same<DataLayout, row_major>::value && VectorWidth > 1),
+                static_assert(!((DataLayout == sycl::ext::oneapi::experimental::matrix::layout::row_major) && VectorWidth > 1),
                               "RowNT in row_major does not support VectorWidth > 1");
             };
         };
@@ -504,11 +504,11 @@ namespace rocwmma
         template <uint32_t BlockDim,
                   uint32_t BlockK,
                   typename DataT,
-                  typename DataLayout,
+                  sycl::ext::oneapi::experimental::matrix::layout DataLayout,
                   uint32_t VectorWidth,
                   uint32_t MaxVectorWidth = VectorWidth>
         struct Col : public std::conditional_t<
-                         std::is_same<DataLayout, col_major>::value,
+                         DataLayout == sycl::ext::oneapi::experimental::matrix::layout::col_major,
                          detail::ColInlineVW<BlockDim, BlockK, DataT, VectorWidth, MaxVectorWidth>,
                          detail::ColOrthoVW<BlockDim, BlockK, DataT, VectorWidth, MaxVectorWidth>>
         {
@@ -676,11 +676,11 @@ namespace rocwmma
         template <uint32_t BlockDim,
                   uint32_t BlockK,
                   typename DataT,
-                  typename DataLayout,
+                  sycl::ext::oneapi::experimental::matrix::layout DataLayout,
                   uint32_t VectorWidth,
                   uint32_t MaxVectorWidth = VectorWidth>
         struct Row : public std::conditional_t<
-                         std::is_same<DataLayout, row_major>::value,
+                         DataLayout == sycl::ext::oneapi::experimental::matrix::layout::row_major,
                          detail::RowInlineVW<BlockDim, BlockK, DataT, VectorWidth, MaxVectorWidth>,
                          detail::RowOrthoVW<BlockDim, BlockK, DataT, VectorWidth, MaxVectorWidth>>
         {

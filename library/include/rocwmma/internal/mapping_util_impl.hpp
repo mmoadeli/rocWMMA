@@ -43,10 +43,10 @@ namespace rocwmma
         // Workgroup configuration
         // Assumption: major thread dimension is X
         // Notation (x, y) = (row, col)
-        ROCWMMA_DEVICE inline uint32_t laneId()
+        ROCWMMA_DEVICE inline uint32_t laneId(sycl::id<1>& id)
         {
             // threadIdx.x % AMDGCN_WAVE_SIZE;
-            return threadIdx.x & (Constants::AMDGCN_WAVE_SIZE - 1u);
+            return id[0] & (Constants::AMDGCN_WAVE_SIZE - 1u);
         }
 
         ROCWMMA_DEVICE constexpr inline Coord2d waveCount(Coord2d const& threadCount)
@@ -68,45 +68,52 @@ namespace rocwmma
         /// WaveSpace
 
         template <uint32_t TBlockX, uint32_t TBlockY>
-        ROCWMMA_DEVICE inline uint32_t WaveSpace<TBlockX, TBlockY>::localLaneId()
+        ROCWMMA_DEVICE inline uint32_t WaveSpace<TBlockX, TBlockY>::localLaneId(sycl::id<1>& id)
         {
-            return laneId();
+            return laneId(id);
         }
 
         template <uint32_t TBlockX, uint32_t TBlockY>
-        ROCWMMA_DEVICE constexpr inline auto WaveSpace<TBlockX, TBlockY>::localWaveCoord()
+        ROCWMMA_DEVICE constexpr inline auto WaveSpace<TBlockX, TBlockY>::localWaveCoord(sycl::id<2>& id)
             -> WaveCoordT
         {
-            return waveCount(make_coord2d(static_cast<uint32_t>(threadIdx.x),
-                                          static_cast<uint32_t>(threadIdx.y)));
+            return waveCount(make_coord2d(static_cast<uint32_t>(id[0]),
+                                          static_cast<uint32_t>(id[1])));
         }
 
         template <uint32_t TBlockX, uint32_t TBlockY>
-        ROCWMMA_DEVICE inline auto WaveSpace<TBlockX, TBlockY>::globalWaveCoord() -> WaveCoordT
+        ROCWMMA_DEVICE inline auto WaveSpace<TBlockX, TBlockY>::globalWaveCoord(sycl::sub_group& sub_group) -> WaveCoordT
         {
-            return waveCount(make_coord2d(blockIdx.x * TBlockX + threadIdx.x,
-                                          blockIdx.y * TBlockY + threadIdx.y));
+            auto BlockDim = sub_group.get_local_range();
+            auto BlockId = sub_group.get_group_id();
+            auto id = sub_group.get_local_id();
+            return waveCount(make_coord2d(BlockId[0] * TBlockX + id[0],
+                                          BlockId[1] * TBlockY + id[1]));
         }
 
         template <>
-        ROCWMMA_DEVICE inline auto WaveSpace<0, 0>::globalWaveCoord() -> WaveCoordT
+        ROCWMMA_DEVICE inline auto WaveSpace<0, 0>::globalWaveCoord(sycl::sub_group& sub_group) -> WaveCoordT
         {
-            return waveCount(make_coord2d(blockIdx.x * blockDim.x + threadIdx.x,
-                                          blockIdx.y * blockDim.y + threadIdx.y));
+            auto BlockDim = sub_group.get_local_range();
+            auto BlockId = sub_group.get_group_id();
+            auto id = sub_group.get_local_id();
+            return waveCount(make_coord2d(BlockId[0] * BlockDim[0] + id[0],
+                                          BlockId[1] * BlockDim[1] + id[1]));
         }
 
-        template <uint32_t TBlockX, uint32_t TBlockY>
-        ROCWMMA_DEVICE constexpr inline auto WaveSpace<TBlockX, TBlockY>::workgroupCoord()
-            -> WorkgroupCoordT
-        {
-            return make_coord2d(static_cast<uint32_t>(blockIdx.x),
-                                static_cast<uint32_t>(blockIdx.y));
-        }
+        // template <uint32_t TBlockX, uint32_t TBlockY>
+        // ROCWMMA_DEVICE constexpr inline auto WaveSpace<TBlockX, TBlockY>::workgroupCoord(sycl::sub_group& sub_group)
+        //     -> WorkgroupCoordT
+        // {
+        //     auto BlockId = sub_group.get_group_id();
+        //     return make_coord2d(static_cast<uint32_t>(BlockId[0]),
+        //                         static_cast<uint32_t>(BlockId[1]));
+        // }
 
         template <uint32_t TBlockX, uint32_t TBlockY>
         template <bool IsConst /* = (TBlockX > 0u && TBlockY > 0u) */,
                   typename std::enable_if_t<IsConst>* /* = nullptr */>
-        ROCWMMA_DEVICE constexpr inline auto WaveSpace<TBlockX, TBlockY>::workgroupDim()
+        ROCWMMA_DEVICE constexpr inline auto WaveSpace<TBlockX, TBlockY>::workgroupDim(sycl::sub_group& sub_group)
             -> WorkgroupDimT
         {
             return waveCount(make_coord2d(TBlockX, TBlockY));
@@ -115,9 +122,10 @@ namespace rocwmma
         template <uint32_t TBlockX, uint32_t TBlockY>
         template <bool IsConst /* = (TBlockX > 0u && TBlockY > 0u) */,
                   typename std::enable_if_t<!IsConst>* /* = nullptr */>
-        ROCWMMA_DEVICE inline auto WaveSpace<TBlockX, TBlockY>::workgroupDim() -> WorkgroupDimT
+        ROCWMMA_DEVICE inline auto WaveSpace<TBlockX, TBlockY>::workgroupDim(sycl::sub_group& sub_group) -> WorkgroupDimT
         {
-            return waveCount(make_coord2d(blockDim.x, blockDim.y));
+            auto BlockDim = sub_group.get_local_range();
+            return waveCount(make_coord2d(BlockDim[0], BlockDim[1]));
         }
 
         /// MatrixSpace
@@ -132,16 +140,16 @@ namespace rocwmma
         }
 
         /// DataSpace
-        template <typename DataOrientation>
+        template <sycl::ext::oneapi::experimental::matrix::layout DataLayout>
         ROCWMMA_DEVICE constexpr inline auto
-            DataSpace<DataOrientation>::leadingDim(MatrixSizeT const& matrixSize)
+            DataSpace<DataLayout>::leadingDim(MatrixSizeT const& matrixSize)
         {
             return get<MinorIndex>(matrixSize);
         }
 
-        template <typename DataOrientation>
+        template <sycl::ext::oneapi::experimental::matrix::layout DataLayout>
         ROCWMMA_DEVICE constexpr inline auto
-            DataSpace<DataOrientation>::fromMatrixCoord(MatrixCoordT const& matrixCoord,
+            DataSpace<DataLayout>::fromMatrixCoord(MatrixCoordT const& matrixCoord,
                                                         uint32_t            leadingDim)
         {
             // 1D data element offset transform
@@ -150,35 +158,40 @@ namespace rocwmma
 
     } // namespace detail
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
-    ROCWMMA_DEVICE inline uint32_t MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::laneId()
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    ROCWMMA_DEVICE inline uint32_t MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::laneId(sycl::id<1>& id)
     {
-        return WaveSpace::localLaneId();
+        return WaveSpace::localLaneId(id);
     }
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
-    ROCWMMA_DEVICE inline auto MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::waveCoord()
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    ROCWMMA_DEVICE inline auto MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::waveCoord(sycl::id<2>& id)
         -> WaveCoordT
     {
-        return WaveSpace::localWaveCoord();
+        return WaveSpace::localWaveCoord(id);
     }
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
-    ROCWMMA_DEVICE inline auto MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::blockCoord()
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    ROCWMMA_DEVICE inline auto MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::blockCoord(sycl::sub_group& sub_group)
         -> BlockCoordT
     {
         // Map each wave 1 : 1 to global block grid
-        return WaveSpace::globalWaveCoord();
+        return WaveSpace::globalWaveCoord(sub_group);
     }
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline auto
-        MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::matrixCoord() -> MatrixCoordT
+        MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::matrixCoord(sycl::id<2>& id) -> MatrixCoordT
     {
-        return MatrixSpace::fromBlockCoord(blockCoord());
+        return MatrixSpace::fromBlockCoord(blockCoord(id));
     }
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline DataT const*
         MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::dataCoord(DataT const* baseAddr,
                                                                            uint32_t     ldm)
@@ -186,7 +199,8 @@ namespace rocwmma
         return baseAddr + DataSpace::fromMatrixCoord(matrixCoord(), ldm);
     }
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline DataT*
         MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::dataCoord(DataT*   baseAddr,
                                                                            uint32_t ldm)
@@ -196,16 +210,18 @@ namespace rocwmma
 
     /// Current workgroup perspective
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline auto
-        MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::workgroupDim() -> WorkgroupDimT
+        MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::workgroupDim(sycl::sub_group& sub_group) -> WorkgroupDimT
     {
-        return WaveSpace::workgroupDim();
+        return WaveSpace::workgroupDim(sub_group);
     }
 
     /// Coordinate override helpers
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline auto
         MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::blockCoordM(uint32_t m)
             -> BlockCoordT
@@ -215,7 +231,8 @@ namespace rocwmma
         return coord;
     }
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline auto
         MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::blockCoordN(uint32_t n)
             -> BlockCoordT
@@ -225,7 +242,8 @@ namespace rocwmma
         return coord;
     }
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline auto
         MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::matrixCoordM(uint32_t m)
             -> MatrixCoordT
@@ -235,7 +253,8 @@ namespace rocwmma
         return coord;
     }
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline auto
         MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::matrixCoordN(uint32_t n)
             -> MatrixCoordT
@@ -247,14 +266,16 @@ namespace rocwmma
 
     /// Conversion helpers
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline auto MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::matrixCoord(
         BlockCoordT const& blockCoord) -> MatrixCoordT
     {
         return MatrixSpace::fromBlockCoord(std::forward<BlockCoordT const>(blockCoord));
     }
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline uint32_t
         MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::dataOffset(
             MatrixCoordT const& matrixCoord, uint32_t ldm)
@@ -262,7 +283,8 @@ namespace rocwmma
         return DataSpace::fromMatrixCoord(std::forward<MatrixCoordT const>(matrixCoord), ldm);
     }
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline DataT const*
         MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::dataCoord(
             DataT const* baseAddr, MatrixCoordT const& matrixCoord, uint32_t ldm)
@@ -271,7 +293,8 @@ namespace rocwmma
                + DataSpace::fromMatrixCoord(std::forward<MatrixCoordT const>(matrixCoord), ldm);
     }
 
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
+        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE inline DataT* MappingUtil<BlockHeight, BlockWidth, DataT, DataLayout>::dataCoord(
         DataT* baseAddr, MatrixCoordT const& matrixCoord, uint32_t ldm)
     {

@@ -33,13 +33,10 @@
 // Fwd decl
 namespace rocwmma
 {
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    class __align__(4) fragment;
+template <typename T, sycl::ext::oneapi::experimental::matrix::use Use,
+          size_t Rows, size_t Cols,
+          sycl::ext::oneapi::experimental::matrix::layout Layout>
+    class alignas(64) fragment;
 }
 
 namespace rocwmma
@@ -48,24 +45,22 @@ namespace rocwmma
     /// DataType access
     ///
 
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct GetDataType<IOConfig<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    struct GetDataType<IOConfig<DataT, Use, Rows, Cols, DataLayout>>
     {
         using type = DataT;
     };
 
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct GetDataType<fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    struct GetDataType<fragment<DataT, Use, Rows, Cols, DataLayout>>
     {
         using type = DataT;
     };
@@ -74,128 +69,119 @@ namespace rocwmma
     /// IOConfig access
     ///
 
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct GetIOConfig<fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    struct GetIOConfig<fragment<DataT, Use, Rows, Cols, DataLayout>>
     {
         using type =
-            typename fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>::IOConfig;
+            typename fragment<DataT, Use, Rows, Cols, DataLayout>::IOConfig;
     };
 
     ///
     /// IOShape access
     ///
 
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct GetIOShape<IOConfig<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    struct GetIOShape<IOConfig<DataT, Use, Rows, Cols, DataLayout>>
     {
         using type =
-            typename IOConfig<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>::IOShape;
+            typename IOConfig<DataT, Use, Rows, Cols, DataLayout>::IOShape;
     };
 
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct GetIOShape<fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    struct GetIOShape<fragment<DataT, Use, Rows, Cols, DataLayout>>
     {
         using type = GetIOShape_t<
-            GetIOConfig_t<fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>>;
+            GetIOConfig_t<fragment<DataT, Use, Rows, Cols, DataLayout>>>;
     };
 
     ///
     /// IOTraits access
     ///
 
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct GetIOTraits<IOConfig<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    struct GetIOTraits<IOConfig<DataT, Use, Rows, Cols, DataLayout>>
     {
         using type =
-            typename IOConfig<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>::IOTraits;
+            typename IOConfig<DataT, Use, Rows, Cols, DataLayout>::IOTraits;
     };
 
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct GetIOTraits<fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    struct GetIOTraits<fragment<DataT, Use, Rows, Cols, DataLayout>>
     {
         using type = GetIOTraits_t<
-            GetIOConfig_t<fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>>;
+            GetIOConfig_t<fragment<DataT, Use, Rows, Cols, DataLayout>>>;
     };
 
     ///
     /// MatrixLayout access
     ///
 
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct GetMatrixLayout<IOShape<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    struct GetMatrixLayout<IOShape<DataT, Use, Rows, Cols, DataLayout>>
     {
         using type =
-            typename IOShape<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>::MatrixLayout;
+            typename IOShape<DataT, Use, Rows, Cols, DataLayout>::MatrixLayout;
     };
 
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct GetMatrixLayout<fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    struct GetMatrixLayout<fragment<DataT, Use, Rows, Cols, DataLayout>>
     {
         using type = GetMatrixLayout_t<
-            GetIOShape_t<fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>>;
+            GetIOShape_t<fragment<DataT, Use, Rows, Cols, DataLayout>>>;
     };
 
     ///
     /// MatrixLayout access
     ///
 
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct GetDataLayout<IOShape<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    struct GetDataLayout<IOShape<DataT, Use, Rows, Cols, DataLayout>>
     {
         using type =
-            typename IOShape<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>::DataLayout;
+            typename IOShape<DataT, Use, Rows, Cols, DataLayout>::DataLayout;
     };
 
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct GetDataLayout<fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    struct GetDataLayout<fragment<DataT, Use, Rows, Cols, DataLayout>>
     {
         using type = GetDataLayout_t<
-            GetIOShape_t<fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>>>;
+            GetIOShape_t<fragment<DataT, Use, Rows, Cols, DataLayout>>>;
     };
 
 } // namespace rocwmma

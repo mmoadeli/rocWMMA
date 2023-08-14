@@ -43,12 +43,9 @@ namespace rocwmma
  * @tparam DataT data type
  * @tparam DataLayoutT in-memory layout as col_major or row_major
  */
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
+    template <typename T, sycl::ext::oneapi::experimental::matrix::use Use,
+          size_t Rows, size_t Cols,
+          sycl::ext::oneapi::experimental::matrix::layout Layout>
     struct IOShape;
 
     /************************************************
@@ -84,31 +81,29 @@ namespace rocwmma
  * For as many groups of N registers to hold BlockDim x BlockK elements.
  *
  ***********************************************/
-    template <uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct IOShape<matrix_a, BlockM, BlockN, BlockK, DataT, DataLayoutT>
+    template <typename DataT,
+          size_t Rows, size_t Cols,
+          sycl::ext::oneapi::experimental::matrix::layout Layout>
+    struct IOShape<DataT, sycl::ext::oneapi::experimental::matrix::use::a, Rows, Cols, Layout>
     {
         enum : uint32_t
         {
-            BlockHeight = BlockM,
-            BlockWidth  = BlockK,
+            BlockHeight = Rows,
+            BlockWidth  = Cols,
 
-            BlockDim = BlockM,
-            KDim     = BlockK,
+            BlockDim = Rows,
+            KDim     = Cols,
 
             MaxVectorWidth = detail::VecWidthTraits<BlockDim, KDim, DataT>::MaxVectorWidth,
-            VectorWidth    = std::is_same<DataLayoutT, row_major>::value ? MaxVectorWidth : 1
+            VectorWidth    = (Layout == sycl::ext::oneapi::experimental::matrix::layout::row_major) ? MaxVectorWidth : 1
         };
 
-        static_assert(!(std::is_same<DataLayoutT, col_major>::value && VectorWidth > 1),
+        static_assert(!((Layout == sycl::ext::oneapi::experimental::matrix::layout::col_major) && VectorWidth > 1),
                       "matrix_a in col_major currently does not support VectorWidth > 1");
 
-        using DataLayout   = DataLayout::template Array1d<DataLayoutT>;
+        using DataLayout   = DataLayout::template Array1d<Layout>;
         using MatrixLayout = MatrixLayout::
-            template ColNT<BlockDim, KDim, DataT, DataLayoutT, VectorWidth, MaxVectorWidth>;
+            template ColNT<BlockDim, KDim, DataT, Layout, VectorWidth, MaxVectorWidth>;
     };
 
     /************************************************
@@ -144,31 +139,29 @@ namespace rocwmma
  * For as many groups of N registers to hold BlockDim x BlockK elements.
  *
  ***********************************************/
-    template <uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct IOShape<matrix_b, BlockM, BlockN, BlockK, DataT, DataLayoutT>
+    template <typename DataT,
+          size_t Rows, size_t Cols,
+          sycl::ext::oneapi::experimental::matrix::layout Layout>
+    struct IOShape<DataT, sycl::ext::oneapi::experimental::matrix::use::b, Rows, Cols, Layout>
     {
         enum : uint32_t
         {
-            BlockHeight = BlockK,
-            BlockWidth  = BlockN,
+            BlockHeight = Rows,
+            BlockWidth  = Cols,
 
-            BlockDim = BlockN,
-            KDim     = BlockK,
+            BlockDim = Cols,
+            KDim     = Rows,
 
             MaxVectorWidth = detail::VecWidthTraits<BlockDim, KDim, DataT>::MaxVectorWidth,
-            VectorWidth    = std::is_same<DataLayoutT, col_major>::value ? MaxVectorWidth : 1
+            VectorWidth    = (Layout == sycl::ext::oneapi::experimental::matrix::layout::col_major) ? MaxVectorWidth : 1
         };
 
-        static_assert(!(std::is_same<DataLayoutT, row_major>::value && VectorWidth > 1),
+        static_assert(!((Layout == sycl::ext::oneapi::experimental::matrix::layout::row_major) && VectorWidth > 1),
                       "matrix_b in row_major currently does not support VectorWidth > 1");
 
-        using DataLayout   = DataLayout::template Array1d<DataLayoutT>;
+        using DataLayout   = DataLayout::template Array1d<Layout>;
         using MatrixLayout = MatrixLayout::
-            template RowNT<BlockDim, KDim, DataT, DataLayoutT, VectorWidth, MaxVectorWidth>;
+            template RowNT<BlockDim, KDim, DataT, Layout, VectorWidth, MaxVectorWidth>;
     };
 
     /************************************************
@@ -204,27 +197,25 @@ namespace rocwmma
  * For as many groups of 4 registers to hold BlockDim x BlockK elements.
  *
  ***********************************************/
-    template <uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayoutT>
-    struct IOShape<accumulator, BlockM, BlockN, BlockK, DataT, DataLayoutT>
+    template <typename DataT,
+          size_t Rows, size_t Cols,
+          sycl::ext::oneapi::experimental::matrix::layout DataLayoutT>
+    struct IOShape<DataT, sycl::ext::oneapi::experimental::matrix::use::accumulator, Rows, Cols, DataLayoutT>
     {
         enum : uint32_t
         {
-            BlockHeight = BlockM,
-            BlockWidth  = BlockN,
+            BlockHeight = Rows,
+            BlockWidth  = Cols,
 
-            BlockDim = BlockN,
-            KDim     = BlockM,
+            BlockDim = Cols,
+            KDim     = Rows,
 
-            MaxVectorWidth = (std::is_same<DataT, float64_t>::value || ROCWMMA_ARCH_NAVI) ? 1 : 4,
-
-            VectorWidth = std::is_same<DataLayoutT, col_major>::value ? MaxVectorWidth : 1,
+            MaxVectorWidth
+            = std::is_same<DataT, float64_t>::value ? 1 : 4, // Actual output of the mfma hardware
+            VectorWidth = DataLayoutT == sycl::ext::oneapi::experimental::matrix::layout::col_major ? MaxVectorWidth : 1,
         };
 
-        static_assert(!(std::is_same<DataLayoutT, row_major>::value && VectorWidth > 1),
+        static_assert(!((DataLayoutT == sycl::ext::oneapi::experimental::matrix::layout::row_major) && VectorWidth > 1),
                       "accumulator in row_major currently does not support VectorWidth > 1");
 
         using DataLayout   = DataLayout::template Array1d<DataLayoutT>;
@@ -232,20 +223,22 @@ namespace rocwmma
             template RowNT<BlockDim, KDim, DataT, DataLayoutT, VectorWidth, MaxVectorWidth>;
     };
 
-    template <uint32_t BlockM, uint32_t BlockN, uint32_t BlockK, typename DataT>
-    struct IOShape<accumulator, BlockM, BlockN, BlockK, DataT, void>
-    {
-        enum : uint32_t
-        {
-            BlockHeight = BlockM,
-            BlockWidth  = BlockN,
+    // template <typename DataT,
+    //       size_t Rows, size_t Cols,
+    //       sycl::ext::oneapi::experimental::matrix::layout DataLayoutT>
+    // struct IOShape<DataT, sycl::ext::oneapi::experimental::matrix::use::accumulator, Rows, Cols>
+    // {
+    //     enum : uint32_t
+    //     {
+    //         BlockHeight = Rows,
+    //         BlockWidth  = Cols,
 
-            BlockDim = BlockN,
-            KDim     = BlockM
-        };
+    //         BlockDim = Cols,
+    //         KDim     = Rows
+    //     };
 
-        // No DataLayout or MatrixLayout without VW, MaxVW and DataOrientation info
-    };
+    //     // No DataLayout or MatrixLayout without VW, MaxVW and DataOrientation info
+    // };
 
 } // namespace rocwmma
 

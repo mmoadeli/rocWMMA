@@ -23,8 +23,12 @@
  * SOFTWARE.
  *
  *******************************************************************************/
-#ifndef ROCWMMA_API_HPP
-#define ROCWMMA_API_HPP
+
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__AMDGCN__)
+
+#define __device__
+
+#include <type_traits>
 
 #include "internal/io_config.hpp"
 #include "internal/io_traits.hpp"
@@ -171,13 +175,12 @@
 namespace rocwmma
 {
     // Configuration profile used in rocwmma calls
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayout>
-    using io_config = rocwmma::IOConfig<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayout>;
+    template <typename DataT,
+              sycl::ext::oneapi::experimental::matrix::use Use,
+              size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    using io_config = rocwmma::IOConfig<DataT, Use, Rows, Cols, DataLayout>;
 
     /**
  * \ingroup rocwmma
@@ -202,13 +205,11 @@ namespace rocwmma
  *
  * @note Fragments are stored in packed registers, however elements have no guaranteed order.
  */
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayout = void>
-    class __align__(4) fragment
+template <typename DataT, sycl::ext::oneapi::experimental::matrix::use Use,
+          size_t Rows, size_t Cols,
+          sycl::ext::oneapi::experimental::matrix::layout DataLayout =
+              sycl::ext::oneapi::experimental::matrix::layout::dynamic>
+    class alignas(64) fragment
     {
     public:
         struct Traits
@@ -217,21 +218,19 @@ namespace rocwmma
             using PackedElementT   = typename PackTraits<DataT>::PackedT;
             using UnpackedElementT = typename PackTraits<DataT>::UnpackedT;
             using IOTraits =
-                typename io_config<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayout>::IOTraits;
+                typename io_config<DataT, Use, Rows, Cols, DataLayout>::IOTraits;
 
         public:
             using AccessT  = VecT<UnpackedElementT, IOTraits::UnpackedSize>;
             using StorageT = VecT<PackedElementT, IOTraits::PackedSize>;
 
-            constexpr static uint32_t Size = IOTraits::UnpackedSize;
-
-            static_assert(IOTraits::PackedVRegCount >= 1,
-                          "Fragments must occupy at least one packed register");
-            static_assert(IOTraits::UnpackedSize % IOTraits::PackedSize == 0,
-                          "Unable to pack fragment elements");
+            // static_assert(IOTraits::PackedVRegCount >= 1,
+            //               "Fragments must occupy at least one packed register");
+            // static_assert(IOTraits::UnpackedSize % IOTraits::PackedSize == 0,
+            //               "Unable to pack fragment elements");
         };
 
-        using IOConfig = io_config<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayout>;
+        using IOConfig = io_config<DataT, Use, Rows, Cols, DataLayout>;
 
         ROCWMMA_DEVICE           fragment() = default;
         ROCWMMA_DEVICE           fragment(const fragment& other);
@@ -270,15 +269,12 @@ namespace rocwmma
       \tparam DataT data type
       \tparam DataLayout in-memory layout as col_major or row_major
     */
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayout>
+    template <typename DataT, sycl::ext::oneapi::experimental::matrix::use Use,
+          size_t Rows, size_t Cols,
+          sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE void
-        fill_fragment(fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayout>& frag,
-                      DataT                                                         value);
+        fill_fragment(fragment<DataT, Use, Rows, Cols, DataLayout>& frag,
+                      DataT                                         value);
 
     //! Loads the entire fragment from the data pointer according to its matrix and data layouts. Data pointer may point to either local or global memory.
     /*!
@@ -290,16 +286,15 @@ namespace rocwmma
       \tparam DataT data type
       \tparam DataLayout in-memory layout as col_major or row_major
     */
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayout>
+    template <sycl::access::address_space Space,
+              sycl::access::decorated IsDecorated, typename DataT, typename InT,
+              sycl::ext::oneapi::experimental::matrix::use Use, size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE void
-        load_matrix_sync(fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayout>& frag,
-                         const DataT*                                                  data,
-                         uint32_t                                                      ldm);
+    load_matrix_sync(fragment<DataT, Use, Rows, Cols, DataLayout> &frag,
+                     sycl::multi_ptr<InT, Space, IsDecorated> data,
+                     uint32_t ldm, sycl::sub_group &sg);
 
     //! Loads the entire fragment from the data pointer according to its matrix layout.Data pointer may point to either local or global memory. This overload provides a run-time ability to choose the data layout of the target fragment.
     /*!
@@ -312,11 +307,11 @@ namespace rocwmma
       \tparam DataT data type
       \tparam DataLayout in-memory layout as col_major or row_major
     */
-    template <typename MatrixT, uint32_t BlockM, uint32_t BlockN, uint32_t BlockK, typename DataT>
-    ROCWMMA_DEVICE void load_matrix_sync(fragment<MatrixT, BlockM, BlockN, BlockK, DataT>& frag,
-                                         const DataT*                                      data,
-                                         uint32_t                                          ldm,
-                                         layout_t                                          layout);
+    // template <typename MatrixT, uint32_t BlockM, uint32_t BlockN, uint32_t BlockK, typename DataT>
+    // ROCWMMA_DEVICE void load_matrix_sync(fragment<MatrixT, BlockM, BlockN, BlockK, DataT>& frag,
+    //                                      const DataT*                                      data,
+    //                                      uint32_t                                          ldm,
+    //                                      layout_t                                          layout);
 
     //! Stores the entire fragment to the data pointer according to its matrix and data layouts. Data pointer may point to either local or global memory.
     /*!
@@ -328,16 +323,15 @@ namespace rocwmma
       \tparam DataT data type
       \tparam DataLayout in-memory layout as col_major or row_major
     */
-    template <typename MatrixT,
-              uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
-              typename DataT,
-              typename DataLayout>
+    template <sycl::access::address_space Space,
+              sycl::access::decorated IsDecorated, typename DataT, typename T,
+              sycl::ext::oneapi::experimental::matrix::use Use, size_t Rows,
+              size_t Cols,
+              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
     ROCWMMA_DEVICE void
-        store_matrix_sync(DataT*                                                              data,
-                          fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayout> const& frag,
-                          uint32_t                                                            ldm);
+    store_matrix_sync(sycl::multi_ptr<T, Space, IsDecorated> data,
+                      fragment<DataT, Use, Rows, Cols, DataLayout> const &frag,
+                      uint32_t ldm, sycl::sub_group &sg);
 
     //!  Stores the entire fragment to the data pointer according to its matrix layout. Data pointer may point to either local or global memory. This overload provides a run-time ability to choose the data layout of the target fragment.
     /*!
@@ -350,12 +344,12 @@ namespace rocwmma
       \tparam DataT data type
       \tparam DataLayout in-memory layout as col_major or row_major
     */
-    template <typename MatrixT, uint32_t BlockM, uint32_t BlockN, uint32_t BlockK, typename DataT>
-    ROCWMMA_DEVICE void
-        store_matrix_sync(DataT*                                                  data,
-                          fragment<MatrixT, BlockM, BlockN, BlockK, DataT> const& frag,
-                          uint32_t                                                ldm,
-                          layout_t                                                layout);
+    // template <typename MatrixT, uint32_t BlockM, uint32_t BlockN, uint32_t BlockK, typename DataT>
+    // ROCWMMA_DEVICE void
+    //     store_matrix_sync(DataT*                                                  data,
+    //                       fragment<MatrixT, BlockM, BlockN, BlockK, DataT> const& frag,
+    //                       uint32_t                                                ldm,
+    //                       layout_t                                                layout);
 
     //! Performs the Multiply-Accumulate operation on the fragments A, B, C and D(D = A * B + C)
     /*!
@@ -370,23 +364,23 @@ namespace rocwmma
       \tparam LayoutB in-memory layout of frag B as col_major or row_major
       \note Frag c = d is valid
     */
-    template <uint32_t BlockM,
-              uint32_t BlockN,
-              uint32_t BlockK,
+    template <size_t BlockM,
+              size_t BlockN,
+              size_t BlockK,
               typename InputT,
               typename ComputeT,
-              typename LayoutA,
-              typename LayoutB,
-              typename LayoutC,
-              typename LayoutD>
+              sycl::ext::oneapi::experimental::matrix::layout LayoutA,
+              sycl::ext::oneapi::experimental::matrix::layout LayoutB,
+              sycl::ext::oneapi::experimental::matrix::layout LayoutC,
+              sycl::ext::oneapi::experimental::matrix::layout LayoutD>
     ROCWMMA_DEVICE void
-        mma_sync(fragment<accumulator, BlockM, BlockN, BlockK, ComputeT, LayoutD>&       d,
-                 fragment<matrix_a, BlockM, BlockN, BlockK, InputT, LayoutA> const&      a,
-                 fragment<matrix_b, BlockM, BlockN, BlockK, InputT, LayoutB> const&      b,
-                 fragment<accumulator, BlockM, BlockN, BlockK, ComputeT, LayoutC> const& c);
+        mma_sync(fragment<ComputeT, sycl::ext::oneapi::experimental::matrix::use::accumulator, BlockM, BlockN, LayoutD>&       d,
+                 fragment<InputT, sycl::ext::oneapi::experimental::matrix::use::a, BlockM, BlockK, LayoutA> const&      a,
+                 fragment<InputT, sycl::ext::oneapi::experimental::matrix::use::b, BlockK, BlockN, LayoutB> const&      b,
+                 fragment<ComputeT, sycl::ext::oneapi::experimental::matrix::use::accumulator, BlockM, BlockN, LayoutC> const& c);
 
-    //! Synchronization point for all wavefronts in a workgroup.
-    ROCWMMA_DEVICE void synchronize_workgroup();
+    // //! Synchronization point for all wavefronts in a workgroup.
+    // ROCWMMA_DEVICE void synchronize_workgroup();
 
 } // namespace rocwmma
 

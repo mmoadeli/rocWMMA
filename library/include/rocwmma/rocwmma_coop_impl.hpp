@@ -141,7 +141,7 @@ namespace rocwmma
         // - shares work with waves on same col (different row)
         // - waves in different cols work on different blocks
         auto waveIndex = get<Config::CoopIndex>(MappingUtil::waveCoord());
-        auto waveCount = get<Config::CoopIndex>(MappingUtil::workgroupDim());
+        auto waveCount = get<Config::CoopIndex>(MappingUtil::workgroupDim(sub_group));
         load_matrix_coop_sync(frag, data, ldm, waveIndex, waveCount);
     }
 
@@ -242,7 +242,8 @@ namespace rocwmma
     ROCWMMA_DEVICE void store_matrix_coop_sync(
         DataT*                                                              data,
         fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayout> const& frag,
-        uint32_t                                                            ldm)
+        uint32_t                                                            ldm,
+        sycl::sub_group& sub_group)
     {
         using FragT       = typename std::decay<decltype(frag)>::type;
         using Config      = GetIOConfig_t<FragT>;
@@ -256,7 +257,7 @@ namespace rocwmma
         // - shares work with waves on same col (different row)
         // - waves in different cols work on different blocks
         auto waveIndex = get<Config::CoopIndex>(MappingUtil::waveCoord());
-        auto waveCount = get<Config::CoopIndex>(MappingUtil::workgroupDim());
+        auto waveCount = get<Config::CoopIndex>(MappingUtil::workgroupDim(sub_group));
         store_matrix_coop_sync(data, frag, ldm, waveIndex, waveCount);
     }
 
