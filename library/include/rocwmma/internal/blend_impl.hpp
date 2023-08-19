@@ -162,13 +162,13 @@ namespace rocwmma
                 };
 
             public:
-                constexpr static uint32_t maskCtrl(sycl::id<1>& id)
+                constexpr static uint32_t maskCtrl()
                 {
                     // Just like a zipper, alternate mask between src0 (0x000000000)
                     // and src1 (0xFFFFFFFF) based on threadIdx.x.
                     // GroupSize of N means that N elements are used from src0, followed
                     // by N elements from src1, and so on.
-                    return ((id[0] >> Log2<GroupSize>::value) & 0x1) * MASK_BASE;
+                    return ((threadIdx.x >> Log2<GroupSize>::value) & 0x1) * MASK_BASE;
                 }
             };
 

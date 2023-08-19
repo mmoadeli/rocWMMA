@@ -54,17 +54,17 @@ namespace rocwmma
                || absDiff < __half2float(std::numeric_limits<hfloat16_t>::min());
     }
 
-    // __host__ inline bool operator!=(const hfloat16_t& x, const hfloat16_t& y)
-    // {
-    //     return !(x == y);
-    // }
+    __host__ inline bool operator!=(const hfloat16_t& x, const hfloat16_t& y)
+    {
+        return !(x == y);
+    }
 
-    // __host__ inline hfloat16_t operator-(const hfloat16_t& x)
-    // {
-    //     detail::Fp16Bits fp16(x);
-    //     fp16.i16 ^= 0x8000; // Flip sign
-    //     return fp16.h16;
-    // }
+    __host__ inline hfloat16_t operator-(const hfloat16_t& x)
+    {
+        detail::Fp16Bits fp16(x);
+        fp16.i16 ^= 0x8000; // Flip sign
+        return fp16.h16;
+    }
 
     // __host__ inline hfloat16_t operator+(const hfloat16_t& x, const hfloat16_t& y)
     // {
@@ -125,10 +125,10 @@ namespace std
     //////////  std::ostream::operator<<(hfloat16_t)  /////////
     ///////////////////////////////////////////////////////////
 
-    // inline ostream& operator<<(ostream& stream, rocwmma::hfloat16_t const& val)
-    // {
-    //     return stream << __half2float(val);
-    // }
+    inline ostream& operator<<(ostream& stream, rocwmma::hfloat16_t const& val)
+    {
+        return stream << __half2float(val);
+    }
 #endif // !defined(__HIPCC_RTC__)
 
 } // namespace std

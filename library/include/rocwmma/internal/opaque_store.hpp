@@ -74,11 +74,10 @@ namespace rocwmma
         using StoreVecTraits = VecTraits<typename Traits::StoreT>;
 
         ROCWMMA_DEVICE static void
-            exec(DataT* dataPtr, typename Traits::InputT const& data, uint32_t ldm,
-                 sycl::id<1>& id)
+            exec(DataT* dataPtr, typename Traits::InputT const& data, uint32_t ldm)
         {
             // Arrange wave threads to starting matrix layout offsets.
-            auto baseOffset = MatrixLayout::baseOffset(id);
+            auto baseOffset = MatrixLayout::baseOffset();
             auto it         = makeVectorIterator<StoreVecTraits::size()>(data).begin();
 
             static_assert(decltype(it)::range() == IOTraits::IOCount,

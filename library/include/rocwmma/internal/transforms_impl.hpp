@@ -465,8 +465,8 @@ namespace rocwmma
         //     using Gather32_2_0 = Permute<PermuteImpl::Ops::Gather32<2, 0>>;
 
         //     constexpr uint32_t waveSize = 64u;
-        //     Gather32_2_16::exec(get<0>(v), /* threadIdx.x  mmoadeli: Fix me */ 0 % waveSize);
-        //     Gather32_2_0::exec(get<1>(v), /* threadIdx.x  mmoadeli: Fix me */ 0 % waveSize);
+        //     Gather32_2_16::exec(get<0>(v), threadIdx.x % waveSize);
+        //     Gather32_2_0::exec(get<1>(v), threadIdx.x % waveSize);
         // }
         return 0;
     }
@@ -517,10 +517,10 @@ namespace rocwmma
         //     using Gather32_4_0 = Permute<PermuteImpl::Ops::Gather32<4, 0>>;
 
         //     constexpr uint32_t waveSize = 64u;
-        //     Gather32_4_0::exec(get<0>(v), /* threadIdx.x  mmoadeli: Fix me */ 0 % waveSize);
-        //     Gather32_4_0::exec(get<1>(v), /* threadIdx.x  mmoadeli: Fix me */ 0 % waveSize);
-        //     Gather32_4_16::exec(get<2>(v), /* threadIdx.x  mmoadeli: Fix me */ 0 % waveSize);
-        //     Gather32_4_16::exec(get<3>(v), /* threadIdx.x  mmoadeli: Fix me */ 0 % waveSize);
+        //     Gather32_4_0::exec(get<0>(v), threadIdx.x % waveSize);
+        //     Gather32_4_0::exec(get<1>(v), threadIdx.x % waveSize);
+        //     Gather32_4_16::exec(get<2>(v), threadIdx.x % waveSize);
+        //     Gather32_4_16::exec(get<3>(v), threadIdx.x % waveSize);
         // }
         return 0;
     }
@@ -533,7 +533,7 @@ namespace rocwmma
         //     using Scatter16_4_0 = Permute<PermuteImpl::Ops::Scatter16<4, 0>>;
 
         //     constexpr uint32_t waveSize = 64u;
-        //     Scatter16_4_0::exec(v, /* threadIdx.x  mmoadeli: Fix me */ 0 % waveSize);
+        //     Scatter16_4_0::exec(v, threadIdx.x % waveSize);
         // }
 
         // // Step 2
@@ -578,7 +578,7 @@ namespace rocwmma
         //     using Scatter16_2_0 = Permute<PermuteImpl::Ops::Scatter16<2, 0>>;
 
         //     constexpr uint32_t waveSize = 64u;
-        //     Scatter16_2_0::exec(v, /* threadIdx.x  mmoadeli: Fix me */ 0 % waveSize);
+        //     Scatter16_2_0::exec(v, threadIdx.x % waveSize);
         // }
 
         // // Step 2

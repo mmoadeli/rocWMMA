@@ -36,7 +36,7 @@ namespace rocwmma
 
     namespace detail
     {
-        // TBlockX, TBlockY default to runtime variable query of blockDim.x, blockDim.y 0
+        // TBlockX, TBlockY default to runtime variable query of blockDim.x, blockDim.y
         // if not known at compile time.
         template <uint32_t TBlockX = 0u, uint32_t TBlockY = 0u>
         struct WaveSpace
@@ -46,25 +46,25 @@ namespace rocwmma
             using WorkgroupDimT   = Coord2d;
 
             // Current lane normalized to [0, 63].
-            ROCWMMA_DEVICE static inline uint32_t localLaneId(sycl::id<1>& id);
+            ROCWMMA_DEVICE static inline uint32_t localLaneId();
 
             // Local wave coordinate relative to current workgroup.
-            ROCWMMA_DEVICE constexpr static inline WaveCoordT localWaveCoord(sycl::id<2>& id);
+            ROCWMMA_DEVICE constexpr static inline WaveCoordT localWaveCoord();
 
             // Global wave grid coordinate relative to all workgroups.
-            ROCWMMA_DEVICE static inline WaveCoordT globalWaveCoord(sycl::sub_group& sub_group);
+            ROCWMMA_DEVICE static inline WaveCoordT globalWaveCoord();
 
             // Global workgroup Id
-            ROCWMMA_DEVICE constexpr static inline WorkgroupCoordT workgroupCoord(sycl::sub_group& sub_group);
+            ROCWMMA_DEVICE constexpr static inline WorkgroupCoordT workgroupCoord();
 
             // Size of workgroup, normalized to wave count.
             template <bool IsConst                        = (TBlockX > 0u && TBlockY > 0u),
                       typename std::enable_if_t<IsConst>* = nullptr>
-            ROCWMMA_DEVICE constexpr static inline WorkgroupDimT workgroupDim(sycl::sub_group& sub_group);
+            ROCWMMA_DEVICE constexpr static inline WorkgroupDimT workgroupDim();
 
             template <bool IsConst                         = (TBlockX > 0u && TBlockY > 0u),
                       typename std::enable_if_t<!IsConst>* = nullptr>
-            ROCWMMA_DEVICE static inline WorkgroupDimT workgroupDim(sycl::sub_group& sub_group);
+            ROCWMMA_DEVICE static inline WorkgroupDimT workgroupDim();
         };
 
         /*
@@ -83,18 +83,18 @@ namespace rocwmma
         /*
     Calculate the memory offsets and addresses for a given matrix coordinate or block coordinate.
     */
-        template <sycl::ext::oneapi::experimental::matrix::layout DataOrientation>
+        template <typename DataOrientation>
         struct DataSpace
         {
             using MatrixCoordT = Coord2d;
             using MatrixSizeT  = Coord2d;
 
-            auto static constexpr Orientation = DataOrientation;
+            using Orientation = DataOrientation;
 
             enum : uint32_t
             {
-                MajorIndex = (DataOrientation == sycl::ext::oneapi::experimental::matrix::layout::row_major) ? 0 : 1,
-                MinorIndex = (DataOrientation == sycl::ext::oneapi::experimental::matrix::layout::row_major) ? 1 : 0
+                MajorIndex = std::is_same<DataOrientation, row_major>::value ? 0 : 1,
+                MinorIndex = std::is_same<DataOrientation, row_major>::value ? 1 : 0
             };
 
             // Determine the leading dimension of a matrix.
@@ -105,8 +105,8 @@ namespace rocwmma
                 fromMatrixCoord(MatrixCoordT const& matrixCoord, uint32_t leadingDim);
         };
 
-        // template <>
-        // struct DataSpace<void>;
+        template <>
+        struct DataSpace<void>;
 
     } // namespace detail;
 
@@ -140,8 +140,7 @@ BlockDim of (256, 4) will give a grid of (4, 4) waves, or 16 total waves in the 
 localWaveId of (2, 3) is the wave corresponding to threads ([128 - 191], 3) in the
 workgroup.
 */
-    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT,
-        sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    template <uint32_t BlockHeight, uint32_t BlockWidth, typename DataT, typename DataLayout>
     struct MappingUtil
     {
         using WaveSpace   = detail::WaveSpace<>;
@@ -156,16 +155,16 @@ workgroup.
         /// Current wave perspective
 
         // Current lane of current wave
-        ROCWMMA_DEVICE static inline uint32_t laneId(sycl::id<1>& id);
+        ROCWMMA_DEVICE static inline uint32_t laneId();
 
         // Local wave coordinate relative to workgroup
-        ROCWMMA_DEVICE static inline WaveCoordT waveCoord(sycl::id<2>& id);
+        ROCWMMA_DEVICE static inline WaveCoordT waveCoord();
 
         // Global block (grid) coordinate of current wave
-        ROCWMMA_DEVICE static inline BlockCoordT blockCoord(sycl::sub_group& sub_group);
+        ROCWMMA_DEVICE static inline BlockCoordT blockCoord();
 
         // Matrix coordinate of current wave
-        ROCWMMA_DEVICE static inline MatrixCoordT matrixCoord(sycl::id<2>& id);
+        ROCWMMA_DEVICE static inline MatrixCoordT matrixCoord();
 
         // Data address of current wave
         ROCWMMA_DEVICE static inline DataT const* dataCoord(DataT const* baseAddr, uint32_t ldm);
@@ -173,7 +172,7 @@ workgroup.
 
         /// Current workgroup perspective
 
-        ROCWMMA_DEVICE static inline WorkgroupDimT workgroupDim(sycl::sub_group& sub_group);
+        ROCWMMA_DEVICE static inline WorkgroupDimT workgroupDim();
 
         /// Coordinate override helpers
 

@@ -40,31 +40,30 @@ namespace rocwmma
             ///
             /// Helper to obtain orthogonal data layout
             ///
-            template <sycl::ext::oneapi::experimental::matrix::layout LayoutT>
+            template <typename LayoutT>
             struct OrthogonalLayout;
 
             template <>
-            struct OrthogonalLayout<sycl::ext::oneapi::experimental::matrix::layout::row_major>
+            struct OrthogonalLayout<row_major>
             {
-                static constexpr auto layout = sycl::ext::oneapi::experimental::matrix::layout::col_major;
+                using Type = col_major;
             };
 
             template <>
-            struct OrthogonalLayout<sycl::ext::oneapi::experimental::matrix::layout::col_major>
+            struct OrthogonalLayout<col_major>
             {
-                static constexpr auto layout = sycl::ext::oneapi::experimental::matrix::layout::row_major;
+                using Type = row_major;
             };
 
             ///
             /// Helper to ensure layout types are consistent (same)
             ///
-            template <sycl::ext::oneapi::experimental::matrix::layout LhsDataLayout,
-                      sycl::ext::oneapi::experimental::matrix::layout RhsDataLayout>
+            template <typename LhsDataLayout, typename RhsDataLayout>
             struct ConsistencyCheck : public std::false_type
             {
             };
 
-            template <sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+            template <typename DataLayout>
             struct ConsistencyCheck<DataLayout, DataLayout> : public std::true_type
             {
             };
@@ -72,21 +71,20 @@ namespace rocwmma
             ///
             /// Helper to check if layout types are orthogonal
             ///
-            template <sycl::ext::oneapi::experimental::matrix::layout LhsDataLayout,
-                      sycl::ext::oneapi::experimental::matrix::layout RhsDataLayout>
+            template <typename LhsDataLayout, typename RhsDataLayout>
             struct OrthogonalCheck : public std::true_type
             {
             };
 
-            template <sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+            template <typename DataLayout>
             struct OrthogonalCheck<DataLayout, DataLayout> : public std::false_type
             {
             };
 
         } // namespace detail
 
-//        template <sycl::ext::oneapi::experimental::matrix::layout DataLayoutT>
-//        using OrthogonalLayout_t = typename detail::OrthogonalLayout<DataLayoutT>::Type;
+        template <typename DataLayoutT>
+        using OrthogonalLayout_t = typename detail::OrthogonalLayout<DataLayoutT>::Type;
 
         // TODO: C++17 OrthogonalCheck_v
         // TODO: C++17 ConsistencyCheck_v
@@ -101,7 +99,7 @@ namespace rocwmma
         template <uint32_t BlockDim,
                   uint32_t BlockK,
                   typename DataT,
-                  sycl::ext::oneapi::experimental::matrix::layout DataLayout,
+                  typename DataLayout,
                   uint32_t VectorWidth,
                   uint32_t MaxVectorWidth>
         struct ColNT;
@@ -109,7 +107,7 @@ namespace rocwmma
         template <uint32_t BlockDim,
                   uint32_t BlockK,
                   typename DataT,
-                  sycl::ext::oneapi::experimental::matrix::layout DataLayout,
+                  typename DataLayout,
                   uint32_t VectorWidth,
                   uint32_t MaxVectorWidth>
         struct RowNT;
@@ -117,7 +115,7 @@ namespace rocwmma
         template <uint32_t BlockDim,
                   uint32_t BlockK,
                   typename DataT,
-                  sycl::ext::oneapi::experimental::matrix::layout DataLayout,
+                  typename DataLayout,
                   uint32_t VectorWidth,
                   uint32_t MaxVectorWidth>
         struct Col;
@@ -125,7 +123,7 @@ namespace rocwmma
         template <uint32_t BlockDim,
                   uint32_t BlockK,
                   typename DataT,
-                  sycl::ext::oneapi::experimental::matrix::layout DataLayout,
+                  typename DataLayout,
                   uint32_t VectorWidth,
                   uint32_t MaxVectorWidth>
         struct Row;
@@ -141,7 +139,7 @@ namespace rocwmma
             template <uint32_t BlockDim,
                       uint32_t BlockK,
                       typename DataT,
-                      sycl::ext::oneapi::experimental::matrix::layout DataLayout,
+                      typename DataLayout,
                       uint32_t VectorWidth,
                       uint32_t MaxVectorWidth>
             struct OrthogonalLayout<
@@ -150,7 +148,7 @@ namespace rocwmma
                 using Type = RowNT<BlockDim,
                                    BlockK,
                                    DataT,
-                                   DataLayout::detail::OrthogonalLayout<DataLayout>::layout,
+                                   typename DataLayout::template OrthogonalLayout_t<DataLayout>,
                                    VectorWidth,
                                    MaxVectorWidth>;
             };
@@ -158,7 +156,7 @@ namespace rocwmma
             template <uint32_t BlockDim,
                       uint32_t BlockK,
                       typename DataT,
-                      sycl::ext::oneapi::experimental::matrix::layout DataLayout,
+                      typename DataLayout,
                       uint32_t VectorWidth,
                       uint32_t MaxVectorWidth>
             struct OrthogonalLayout<
@@ -167,7 +165,7 @@ namespace rocwmma
                 using Type = ColNT<BlockDim,
                                    BlockK,
                                    DataT,
-                                   DataLayout::detail::OrthogonalLayout<DataLayout>::layout,
+                                   typename DataLayout::template OrthogonalLayout_t<DataLayout>,
                                    VectorWidth,
                                    MaxVectorWidth>;
             };
@@ -175,7 +173,7 @@ namespace rocwmma
             template <uint32_t BlockDim,
                       uint32_t BlockK,
                       typename DataT,
-                      sycl::ext::oneapi::experimental::matrix::layout DataLayout,
+                      typename DataLayout,
                       uint32_t VectorWidth,
                       uint32_t MaxVectorWidth>
             struct OrthogonalLayout<
@@ -184,7 +182,7 @@ namespace rocwmma
                 using Type = Row<BlockDim,
                                  BlockK,
                                  DataT,
-                                DataLayout::detail::OrthogonalLayout<DataLayout>::layout,
+                                 typename DataLayout::template OrthogonalLayout_t<DataLayout>,
                                  VectorWidth,
                                  MaxVectorWidth>;
             };
@@ -192,7 +190,7 @@ namespace rocwmma
             template <uint32_t BlockDim,
                       uint32_t BlockK,
                       typename DataT,
-                      sycl::ext::oneapi::experimental::matrix::layout DataLayout,
+                      typename DataLayout,
                       uint32_t VectorWidth,
                       uint32_t MaxVectorWidth>
             struct OrthogonalLayout<
@@ -201,7 +199,7 @@ namespace rocwmma
                 using Type = Col<BlockDim,
                                  BlockK,
                                  DataT,
-                                 DataLayout::detail::OrthogonalLayout<DataLayout>::layout,
+                                 typename DataLayout::template OrthogonalLayout_t<DataLayout>,
                                  VectorWidth,
                                  MaxVectorWidth>;
             };
@@ -228,13 +226,9 @@ namespace rocwmma
                       uint32_t MaxVectorWidth,
                       uint32_t RhsVectorWidth>
             struct ConsistencyCheck<
-                MatrixLayout::ColNT<BlockDim, BlockK, DataT,
-                sycl::ext::oneapi::experimental::matrix::layout::col_major,
-                1, MaxVectorWidth>,
+                MatrixLayout::ColNT<BlockDim, BlockK, DataT, col_major, 1, MaxVectorWidth>,
                 MatrixLayout::
-                    ColNT<BlockDim, BlockK, DataT,
-                    sycl::ext::oneapi::experimental::matrix::layout::row_major,
-                    RhsVectorWidth, MaxVectorWidth>>
+                    ColNT<BlockDim, BlockK, DataT, row_major, RhsVectorWidth, MaxVectorWidth>>
                 : public std::true_type
             {
             };
@@ -246,12 +240,8 @@ namespace rocwmma
                       uint32_t LhsVectorWidth>
             struct ConsistencyCheck<
                 MatrixLayout::
-                    ColNT<BlockDim, BlockK, DataT,
-                    sycl::ext::oneapi::experimental::matrix::layout::row_major,
-                    LhsVectorWidth, MaxVectorWidth>,
-                MatrixLayout::ColNT<BlockDim, BlockK, DataT,
-                sycl::ext::oneapi::experimental::matrix::layout::col_major,
-                1, MaxVectorWidth>>
+                    ColNT<BlockDim, BlockK, DataT, row_major, LhsVectorWidth, MaxVectorWidth>,
+                MatrixLayout::ColNT<BlockDim, BlockK, DataT, col_major, 1, MaxVectorWidth>>
                 : public std::true_type
             {
             };
@@ -263,12 +253,8 @@ namespace rocwmma
                       uint32_t LhsVectorWidth>
             struct ConsistencyCheck<
                 MatrixLayout::
-                    RowNT<BlockDim, BlockK, DataT,
-                    sycl::ext::oneapi::experimental::matrix::layout::col_major,
-                    LhsVectorWidth, MaxVectorWidth>,
-                MatrixLayout::RowNT<BlockDim, BlockK, DataT,
-                sycl::ext::oneapi::experimental::matrix::layout::row_major,
-                1, MaxVectorWidth>>
+                    RowNT<BlockDim, BlockK, DataT, col_major, LhsVectorWidth, MaxVectorWidth>,
+                MatrixLayout::RowNT<BlockDim, BlockK, DataT, row_major, 1, MaxVectorWidth>>
                 : public std::true_type
             {
             };
@@ -279,11 +265,9 @@ namespace rocwmma
                       uint32_t MaxVectorWidth,
                       uint32_t RhsVectorWidth>
             struct ConsistencyCheck<
-                MatrixLayout::RowNT<BlockDim, BlockK, DataT,
-                sycl::ext::oneapi::experimental::matrix::layout::row_major,
-                1, MaxVectorWidth>,
+                MatrixLayout::RowNT<BlockDim, BlockK, DataT, row_major, 1, MaxVectorWidth>,
                 MatrixLayout::
-                    RowNT<BlockDim, BlockK, DataT, sycl::ext::oneapi::experimental::matrix::layout::col_major, RhsVectorWidth, MaxVectorWidth>>
+                    RowNT<BlockDim, BlockK, DataT, col_major, RhsVectorWidth, MaxVectorWidth>>
                 : public std::true_type
             {
             };
@@ -293,7 +277,7 @@ namespace rocwmma
             template <uint32_t BlockDim,
                       uint32_t BlockK,
                       typename DataT,
-                      sycl::ext::oneapi::experimental::matrix::layout DataLayout,
+                      typename DataLayout,
                       uint32_t LhsVectorWidth,
                       uint32_t RhsVectorWidth,
                       uint32_t MaxVectorWidth>
@@ -309,7 +293,7 @@ namespace rocwmma
             template <uint32_t BlockDim,
                       uint32_t BlockK,
                       typename DataT,
-                      sycl::ext::oneapi::experimental::matrix::layout DataLayout,
+                      typename DataLayout,
                       uint32_t LhsVectorWidth,
                       uint32_t RhsVectorWidth,
                       uint32_t MaxVectorWidth>
@@ -339,12 +323,8 @@ namespace rocwmma
 
             template <uint32_t BlockDim, uint32_t BlockK, typename DataT, uint32_t MaxVectorWidth>
             struct OrthogonalCheck<
-                MatrixLayout::ColNT<BlockDim, BlockK, DataT,
-                sycl::ext::oneapi::experimental::matrix::layout::col_major,
-                1, MaxVectorWidth>,
-                MatrixLayout::RowNT<BlockDim, BlockK, DataT,
-                sycl::ext::oneapi::experimental::matrix::layout::row_major,
-                1, MaxVectorWidth>>
+                MatrixLayout::ColNT<BlockDim, BlockK, DataT, col_major, 1, MaxVectorWidth>,
+                MatrixLayout::RowNT<BlockDim, BlockK, DataT, row_major, 1, MaxVectorWidth>>
                 : public std::true_type
             {
             };
@@ -357,25 +337,17 @@ namespace rocwmma
                       uint32_t MaxVectorWidth>
             struct OrthogonalCheck<
                 MatrixLayout::
-                    ColNT<BlockDim, BlockK, DataT,
-                    sycl::ext::oneapi::experimental::matrix::layout::row_major,
-                    LhsVectorWidth, MaxVectorWidth>,
+                    ColNT<BlockDim, BlockK, DataT, row_major, LhsVectorWidth, MaxVectorWidth>,
                 MatrixLayout::
-                    RowNT<BlockDim, BlockK, DataT,
-                    sycl::ext::oneapi::experimental::matrix::layout::col_major,
-                    RhsVectorWidth, MaxVectorWidth>>
+                    RowNT<BlockDim, BlockK, DataT, col_major, RhsVectorWidth, MaxVectorWidth>>
                 : public std::true_type
             {
             };
 
             template <uint32_t BlockDim, uint32_t BlockK, typename DataT, uint32_t MaxVectorWidth>
             struct OrthogonalCheck<
-                MatrixLayout::RowNT<BlockDim, BlockK, DataT,
-                sycl::ext::oneapi::experimental::matrix::layout::row_major,
-                1, MaxVectorWidth>,
-                MatrixLayout::ColNT<BlockDim, BlockK, DataT,
-                sycl::ext::oneapi::experimental::matrix::layout::col_major,
-                1, MaxVectorWidth>>
+                MatrixLayout::RowNT<BlockDim, BlockK, DataT, row_major, 1, MaxVectorWidth>,
+                MatrixLayout::ColNT<BlockDim, BlockK, DataT, col_major, 1, MaxVectorWidth>>
                 : public std::true_type
             {
             };
@@ -388,13 +360,9 @@ namespace rocwmma
                       uint32_t MaxVectorWidth>
             struct OrthogonalCheck<
                 MatrixLayout::
-                    RowNT<BlockDim, BlockK, DataT,
-                    sycl::ext::oneapi::experimental::matrix::layout::col_major,
-                    LhsVectorWidth, MaxVectorWidth>,
+                    RowNT<BlockDim, BlockK, DataT, col_major, LhsVectorWidth, MaxVectorWidth>,
                 MatrixLayout::
-                    ColNT<BlockDim, BlockK, DataT,
-                    sycl::ext::oneapi::experimental::matrix::layout::row_major,
-                    RhsVectorWidth, MaxVectorWidth>>
+                    ColNT<BlockDim, BlockK, DataT, row_major, RhsVectorWidth, MaxVectorWidth>>
                 : public std::true_type
             {
             };
@@ -402,7 +370,7 @@ namespace rocwmma
             template <uint32_t BlockDim,
                       uint32_t BlockK,
                       typename DataT,
-                      sycl::ext::oneapi::experimental::matrix::layout LhsDataLayout,
+                      typename LhsDataLayout,
                       uint32_t LhsVectorWidth,
                       uint32_t RhsVectorWidth,
                       uint32_t MaxVectorWidth>
@@ -412,7 +380,7 @@ namespace rocwmma
                 MatrixLayout::Row<BlockDim,
                                   BlockK,
                                   DataT,
-                                  DataLayout::detail::OrthogonalLayout<LhsDataLayout>::layout,
+                                  typename DataLayout::template OrthogonalLayout_t<LhsDataLayout>,
                                   RhsVectorWidth,
                                   MaxVectorWidth>> : public std::true_type
             {
@@ -421,7 +389,7 @@ namespace rocwmma
             template <uint32_t BlockDim,
                       uint32_t BlockK,
                       typename DataT,
-                      sycl::ext::oneapi::experimental::matrix::layout LhsDataLayout,
+                      typename LhsDataLayout,
                       uint32_t LhsVectorWidth,
                       uint32_t RhsVectorWidth,
                       uint32_t MaxVectorWidth>
@@ -431,7 +399,7 @@ namespace rocwmma
                 MatrixLayout::Col<BlockDim,
                                   BlockK,
                                   DataT,
-                                  DataLayout::detail::OrthogonalLayout<LhsDataLayout>::layout,
+                                  typename DataLayout::template OrthogonalLayout_t<LhsDataLayout>,
                                   RhsVectorWidth,
                                   MaxVectorWidth>> : public std::true_type
             {
@@ -445,21 +413,17 @@ namespace rocwmma
                       uint32_t MaxVectorWidth>
             struct OrthogonalCheck<
                 MatrixLayout::
-                    Col<BlockDim, BlockK, DataT,
-                    sycl::ext::oneapi::experimental::matrix::layout::col_major,
-                    LhsVectorWidth, MaxVectorWidth>,
+                    Col<BlockDim, BlockK, DataT, col_major, LhsVectorWidth, MaxVectorWidth>,
                 MatrixLayout::
-                    Row<BlockDim, BlockK, DataT,
-                    sycl::ext::oneapi::experimental::matrix::layout::row_major,
-                    RhsVectorWidth, MaxVectorWidth>>
+                    Row<BlockDim, BlockK, DataT, row_major, RhsVectorWidth, MaxVectorWidth>>
                 : public std::true_type
             {
             };
 
         } // namespace detail
 
-        // template <sycl::ext::oneapi::experimental::matrix::layout DataLayoutT>
-        // using OrthogonalLayout_t = typename detail::OrthogonalLayout<DataLayoutT>::Type;
+        template <typename DataLayoutT>
+        using OrthogonalLayout_t = typename detail::OrthogonalLayout<DataLayoutT>::Type;
 
         // TODO: C++17 OrthogonalCheck_v
         // TODO: C++17 ConsistencyCheck_v
@@ -569,17 +533,17 @@ namespace rocwmma
                     using MatrixCoordT = Coord2d;
                 };
 
-                ROCWMMA_DEVICE static inline typename Traits::MatrixCoordT baseOffset(sycl::id<1>& id)
+                ROCWMMA_DEVICE static inline typename Traits::MatrixCoordT baseOffset()
                 {
                     // TODO: Use constexpr if on C++17
                     if(Traits::LargeDim)
                     {
-                        return make_coord2d(id[0] % Traits::WaveSize, 0u);
+                        return make_coord2d(threadIdx.x % Traits::WaveSize, 0u);
                     }
                     else
                     {
-                        return make_coord2d(id[0] % BlockDim,
-                                            (id[0] / BlockDim) * MaxVectorWidth
+                        return make_coord2d(threadIdx.x % BlockDim,
+                                            (threadIdx.x / BlockDim) * MaxVectorWidth
                                                 % Traits::MaxKPerIO);
                     }
                 }
@@ -772,18 +736,18 @@ namespace rocwmma
                     using MatrixCoordT = Coord2d;
                 };
 
-                ROCWMMA_DEVICE static inline typename Traits::MatrixCoordT baseOffset(sycl::id<1>& id)
+                ROCWMMA_DEVICE static inline typename Traits::MatrixCoordT baseOffset()
                 {
                     // TODO: Use constexpr if when C++ 17
                     if(Traits::LargeDim)
                     {
-                        return make_coord2d(id[0] * MaxVectorWidth % Traits::MaxElementsPerIO,
+                        return make_coord2d(threadIdx.x * MaxVectorWidth % Traits::MaxElementsPerIO,
                                             0u);
                     }
                     else
                     {
-                        return make_coord2d(id[0] * MaxVectorWidth % BlockDim,
-                                            id[0] * MaxVectorWidth / BlockDim
+                        return make_coord2d(threadIdx.x * MaxVectorWidth % BlockDim,
+                                            threadIdx.x * MaxVectorWidth / BlockDim
                                                 % Traits::MaxKPerIO);
                     }
                 }
@@ -891,9 +855,9 @@ namespace rocwmma
                 };
 
                 // Matrix coord offsets
-                ROCWMMA_DEVICE static inline typename Traits::MatrixCoordT baseOffset(sycl::id<1>& id)
+                ROCWMMA_DEVICE static inline typename Traits::MatrixCoordT baseOffset()
                 {
-                    return swap(Traits::OrthoLayout::baseOffset(id));
+                    return swap(Traits::OrthoLayout::baseOffset());
                 }
                 ROCWMMA_DEVICE static inline typename Traits::MatrixCoordT
                     incrementalOffset(uint32_t iteration)
@@ -924,9 +888,9 @@ namespace rocwmma
                 };
 
                 // Matrix coord offsets
-                ROCWMMA_DEVICE static inline typename Traits::MatrixCoordT baseOffset(sycl::id<1>& id)
+                ROCWMMA_DEVICE static inline typename Traits::MatrixCoordT baseOffset()
                 {
-                    return swap(Traits::OrthoLayout::baseOffset(id));
+                    return swap(Traits::OrthoLayout::baseOffset());
                 }
                 ROCWMMA_DEVICE static inline typename Traits::MatrixCoordT
                     incrementalOffset(uint32_t iteration)

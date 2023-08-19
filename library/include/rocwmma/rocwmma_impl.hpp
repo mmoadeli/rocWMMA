@@ -67,96 +67,127 @@ namespace rocwmma
     }
 
     // fragment implementations
-    template <typename T, sycl::ext::oneapi::experimental::matrix::use Use,
-          size_t Rows, size_t Cols,
-          sycl::ext::oneapi::experimental::matrix::layout Layout>
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename LayoutT>
     ROCWMMA_DEVICE
-        fragment<T, Use, Rows, Cols, Layout>::fragment(const fragment& other)
+        fragment<MatrixT, BlockM, BlockN, BlockK, DataT, LayoutT>::fragment(const fragment& other)
         : mStorage(other.mStorage)
     {
     }
 
-    template <typename T, sycl::ext::oneapi::experimental::matrix::use Use,
-          size_t Rows, size_t Cols,
-          sycl::ext::oneapi::experimental::matrix::layout Layout>
-    ROCWMMA_DEVICE fragment<T, Use, Rows, Cols, Layout>&
-        fragment<T, Use, Rows, Cols, Layout>::operator=(
-            const fragment<T, Use, Rows, Cols, Layout>& other)
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename LayoutT>
+    ROCWMMA_DEVICE fragment<MatrixT, BlockM, BlockN, BlockK, DataT, LayoutT>&
+        fragment<MatrixT, BlockM, BlockN, BlockK, DataT, LayoutT>::operator=(
+            const fragment<MatrixT, BlockM, BlockN, BlockK, DataT, LayoutT>& other)
     {
         mStorage = other.mStorage;
         return *this;
     }
 
-    template <typename T, sycl::ext::oneapi::experimental::matrix::use Use,
-          size_t Rows, size_t Cols,
-          sycl::ext::oneapi::experimental::matrix::layout Layout>
-    ROCWMMA_DEVICE inline T&
-        fragment<T, Use, Rows, Cols, Layout>::operator[](uint32_t index)
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename LayoutT>
+    ROCWMMA_DEVICE inline DataT&
+        fragment<MatrixT, BlockM, BlockN, BlockK, DataT, LayoutT>::operator[](uint32_t index)
     {
         return mAccess.data[index];
     }
 
-    template <typename T, sycl::ext::oneapi::experimental::matrix::use Use,
-          size_t Rows, size_t Cols,
-          sycl::ext::oneapi::experimental::matrix::layout Layout>
-    ROCWMMA_DEVICE inline auto fragment<T, Use, Rows, Cols, Layout>::operator*() ->
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename LayoutT>
+    ROCWMMA_DEVICE inline auto
+        fragment<MatrixT, BlockM, BlockN, BlockK, DataT, LayoutT>::operator*() ->
         typename Traits::StorageT&
     {
         return mStorage;
     }
 
-    template <typename T, sycl::ext::oneapi::experimental::matrix::use Use,
-          size_t Rows, size_t Cols,
-          sycl::ext::oneapi::experimental::matrix::layout Layout>
-    ROCWMMA_DEVICE inline T const&
-        fragment<T, Use, Rows, Cols, Layout>::operator[](uint32_t index) const
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename LayoutT>
+    ROCWMMA_DEVICE inline DataT const&
+        fragment<MatrixT, BlockM, BlockN, BlockK, DataT, LayoutT>::operator[](uint32_t index) const
     {
         return mAccess.data[index];
     }
 
-    template <typename T, sycl::ext::oneapi::experimental::matrix::use Use,
-          size_t Rows, size_t Cols,
-          sycl::ext::oneapi::experimental::matrix::layout Layout>
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename LayoutT>
     ROCWMMA_DEVICE inline auto
-        fragment<T, Use, Rows, Cols, Layout>::operator*() const ->
+        fragment<MatrixT, BlockM, BlockN, BlockK, DataT, LayoutT>::operator*() const ->
         typename Traits::StorageT const&
     {
         return mStorage;
     }
 
-    template <typename T, sycl::ext::oneapi::experimental::matrix::use Use,
-          size_t Rows, size_t Cols,
-          sycl::ext::oneapi::experimental::matrix::layout Layout>
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename LayoutT>
     ROCWMMA_DEVICE constexpr inline uint32_t
-        fragment<T, Use, Rows, Cols, Layout>::blockDim()
+        fragment<MatrixT, BlockM, BlockN, BlockK, DataT, LayoutT>::blockDim()
     {
         return IOConfig::BlockDim;
     }
 
-    template <typename T, sycl::ext::oneapi::experimental::matrix::use Use,
-          size_t Rows, size_t Cols,
-          sycl::ext::oneapi::experimental::matrix::layout Layout>
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename LayoutT>
     ROCWMMA_DEVICE constexpr inline uint32_t
-        fragment<T, Use, Rows, Cols, Layout>::kDim()
+        fragment<MatrixT, BlockM, BlockN, BlockK, DataT, LayoutT>::kDim()
     {
         return IOConfig::KDim;
     }
 
-    template <typename T, sycl::ext::oneapi::experimental::matrix::use Use,
-          size_t Rows, size_t Cols,
-          sycl::ext::oneapi::experimental::matrix::layout Layout>
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename LayoutT>
     ROCWMMA_DEVICE constexpr inline uint32_t
-        fragment<T, Use, Rows, Cols, Layout>::size()
+        fragment<MatrixT, BlockM, BlockN, BlockK, DataT, LayoutT>::size()
     {
         return num_elements;
     }
 
-    template <typename DataT, sycl::ext::oneapi::experimental::matrix::use Use,
-          size_t Rows, size_t Cols,
-          sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename DataLayout>
     ROCWMMA_DEVICE void
-        fill_fragment(fragment<DataT, Use, Rows, Cols, DataLayout>& frag,
-                      DataT                                          value)
+        fill_fragment(fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayout>& frag,
+                      DataT                                                         value)
     {
         using FragT       = typename std::decay<decltype(frag)>::type;
         using Broadcaster = typename GetIOConfig_t<FragT>::Broadcaster;
@@ -169,137 +200,133 @@ namespace rocwmma
         Broadcaster::exec(frag.mAccess, value);
     }
 
-    template <sycl::access::address_space Space,
-              sycl::access::decorated IsDecorated, typename DataT, typename InT,
-              sycl::ext::oneapi::experimental::matrix::use Use, size_t Rows,
-              size_t Cols,
-              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename DataLayout>
     ROCWMMA_DEVICE void
-    load_matrix_sync(fragment<DataT, Use, Rows, Cols, DataLayout> &frag,
-                     sycl::multi_ptr<InT, Space, IsDecorated> data,
-                     uint32_t ldm, sycl::sub_group &sg) {
+        load_matrix_sync(fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayout>& frag,
+                         const DataT*                                                  data,
+                         uint32_t                                                      ldm)
+    {
         using FragT  = typename std::decay<decltype(frag)>::type;
         using Loader = typename GetIOConfig_t<FragT>::Loader;
-        auto tileptr = reinterpret_cast<const DataT *>(data.get());
 
-        // // Sanity checks
-        // static_assert(!std::is_same<DataLayout, void>::value,
-        //               "Must provide layout information. Either statically assign data layout in "
-        //               "fragment declaration or use the run-time function overload.");
+        // Sanity checks
+        static_assert(!std::is_same<DataLayout, void>::value,
+                      "Must provide layout information. Either statically assign data layout in "
+                      "fragment declaration or use the run-time function overload.");
 
         static_assert(
             std::is_same<typename FragT::Traits::AccessT, typename Loader::Traits::OutputT>::value,
             "Fragment access and load output types do not match");
 
         // Load then implicit pack
-        auto id = sg.get_local_id();
-        Loader::exec(frag.mAccess, tileptr, ldm, id);
+        Loader::exec(frag.mAccess, data, ldm);
     }
 
-    // template <typename DataT, sycl::ext::oneapi::experimental::matrix::use Use,
-    //       size_t Rows, size_t Cols>
-    // ROCWMMA_DEVICE void load_matrix_sync(fragment<DataT, Use, Rows, Cols, DataLayout>& frag,
-    //                                  const DataT*                                      data,
-    //                                  uint32_t                                          ldm,
-    //       sycl::ext::oneapi::experimental::matrix::layout layout)
-    // {
-    //     using FragRowMajor = fragment<MatrixT, BlockM, BlockN, BlockK, DataT, row_major>;
-    //     using FragColMajor = fragment<MatrixT, BlockM, BlockN, BlockK, DataT, col_major>;
+    template <typename MatrixT, uint32_t BlockM, uint32_t BlockN, uint32_t BlockK, typename DataT>
+    ROCWMMA_DEVICE void load_matrix_sync(fragment<MatrixT, BlockM, BlockN, BlockK, DataT>& frag,
+                                         const DataT*                                      data,
+                                         uint32_t                                          ldm,
+                                         layout_t                                          layout)
+    {
+        using FragRowMajor = fragment<MatrixT, BlockM, BlockN, BlockK, DataT, row_major>;
+        using FragColMajor = fragment<MatrixT, BlockM, BlockN, BlockK, DataT, col_major>;
 
-    //     // Dispatch on layout type
-    //     if(layout == layout_t::mem_row_major)
-    //     {
-    //         load_matrix_sync(reinterpret_cast<FragRowMajor&>(frag), data, ldm);
-    //     }
-    //     else
-    //     {
-    //         load_matrix_sync(reinterpret_cast<FragColMajor&>(frag), data, ldm);
-    //     }
-    // }
+        // Dispatch on layout type
+        if(layout == layout_t::mem_row_major)
+        {
+            load_matrix_sync(reinterpret_cast<FragRowMajor&>(frag), data, ldm);
+        }
+        else
+        {
+            load_matrix_sync(reinterpret_cast<FragColMajor&>(frag), data, ldm);
+        }
+    }
 
-    template <sycl::access::address_space Space,
-              sycl::access::decorated IsDecorated, typename DataT, typename T,
-              sycl::ext::oneapi::experimental::matrix::use Use, size_t Rows,
-              size_t Cols,
-              sycl::ext::oneapi::experimental::matrix::layout DataLayout>
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename DataLayout>
     ROCWMMA_DEVICE void
-    store_matrix_sync(sycl::multi_ptr<T, Space, IsDecorated> data,
-                      fragment<DataT, Use, Rows, Cols, DataLayout> const &frag,
-                      uint32_t ldm, sycl::sub_group &sg)
-
+        store_matrix_sync(DataT*                                                              data,
+                          fragment<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayout> const& frag,
+                          uint32_t                                                            ldm)
     {
         using FragT  = typename std::decay<decltype(frag)>::type;
         using Storer = typename GetIOConfig_t<FragT>::Storer;
-        auto tileptr = reinterpret_cast<DataT *>(data.get());
 
-        // // Sanity check
-        // static_assert(!std::is_same<DataLayout, void>::value,
-        //               "Must provide data layout. Either statically assign data layout in "
-        //               "fragment declaration or use the run-time function overload.");
+        // Sanity check
+        static_assert(!std::is_same<DataLayout, void>::value,
+                      "Must provide data layout. Either statically assign data layout in "
+                      "fragment declaration or use the run-time function overload.");
 
         static_assert(
             std::is_same<typename FragT::Traits::AccessT, typename Storer::Traits::InputT>::value,
             "Fragment access and store input types do not match");
 
         // Implicit unpack and then store
-        auto id = sg.get_local_id();
-        Storer::exec(tileptr, frag.mAccess, ldm, id);
+        Storer::exec(data, frag.mAccess, ldm);
     }
 
-    // template <typename MatrixT, uint32_t BlockM, uint32_t BlockN, uint32_t BlockK, typename DataT>
-    // ROCWMMA_DEVICE void
-    //     store_matrix_sync(DataT*                                                  data,
-    //                       fragment<MatrixT, BlockM, BlockN, BlockK, DataT> const& frag,
-    //                       uint32_t                                                ldm,
-    //                       layout_t                                                layout)
-    // {
-    //     using FragRowMajor = fragment<MatrixT, BlockM, BlockN, BlockK, DataT, row_major>;
-    //     using FragColMajor = fragment<MatrixT, BlockM, BlockN, BlockK, DataT, col_major>;
+    template <typename MatrixT, uint32_t BlockM, uint32_t BlockN, uint32_t BlockK, typename DataT>
+    ROCWMMA_DEVICE void
+        store_matrix_sync(DataT*                                                  data,
+                          fragment<MatrixT, BlockM, BlockN, BlockK, DataT> const& frag,
+                          uint32_t                                                ldm,
+                          layout_t                                                layout)
+    {
+        using FragRowMajor = fragment<MatrixT, BlockM, BlockN, BlockK, DataT, row_major>;
+        using FragColMajor = fragment<MatrixT, BlockM, BlockN, BlockK, DataT, col_major>;
 
-    //     // Dispatch on layout type
-    //     if(layout == layout_t::mem_row_major)
-    //     {
-    //         store_matrix_sync(data, reinterpret_cast<FragRowMajor const&>(frag), ldm);
-    //     }
-    //     else
-    //     {
-    //         store_matrix_sync(data, reinterpret_cast<FragColMajor const&>(frag), ldm);
-    //     }
-    // }
+        // Dispatch on layout type
+        if(layout == layout_t::mem_row_major)
+        {
+            store_matrix_sync(data, reinterpret_cast<FragRowMajor const&>(frag), ldm);
+        }
+        else
+        {
+            store_matrix_sync(data, reinterpret_cast<FragColMajor const&>(frag), ldm);
+        }
+    }
 
-    template <size_t BlockM,
-              size_t BlockN,
-              size_t BlockK,
+    template <uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
               typename InputT,
               typename ComputeT,
-              sycl::ext::oneapi::experimental::matrix::layout LayoutA,
-              sycl::ext::oneapi::experimental::matrix::layout LayoutB,
-              sycl::ext::oneapi::experimental::matrix::layout LayoutC,
-              sycl::ext::oneapi::experimental::matrix::layout LayoutD>
+              typename LayoutA,
+              typename LayoutB,
+              typename LayoutC,
+              typename LayoutD>
     ROCWMMA_DEVICE void
-        mma_sync(fragment<ComputeT, sycl::ext::oneapi::experimental::matrix::use::accumulator, BlockM, BlockN, LayoutD>&       d,
-                 fragment<InputT, sycl::ext::oneapi::experimental::matrix::use::a, BlockM, BlockK, LayoutA> const&             a,
-                 fragment<InputT, sycl::ext::oneapi::experimental::matrix::use::b, BlockK, BlockN, LayoutB> const&             b,
-                 fragment<ComputeT, sycl::ext::oneapi::experimental::matrix::use::accumulator, BlockM, BlockN, LayoutC> const& c)
+        mma_sync(fragment<accumulator, BlockM, BlockN, BlockK, ComputeT, LayoutD>&       d,
+                 fragment<matrix_a, BlockM, BlockN, BlockK, InputT, LayoutA> const&      a,
+                 fragment<matrix_b, BlockM, BlockN, BlockK, InputT, LayoutB> const&      b,
+                 fragment<accumulator, BlockM, BlockN, BlockK, ComputeT, LayoutC> const& c)
     {
         using FragA = typename std::decay<decltype(a)>::type;
         using FragB = typename std::decay<decltype(b)>::type;
 
         // Sanity check
-        static_assert(detail::MfmaCheck<FragA, FragB>::value,
-                     "A and B fragment layouts must be orthogonal");
+        // static_assert(detail::MfmaCheck<FragA, FragB>::value,
+        //              "A and B fragment layouts must be orthogonal");
         using MMA = typename std::conditional_t<ROCWMMA_ARCH_MI,
                                                 Mfma<InputT, ComputeT, BlockM, BlockN, BlockK>,
                                                 Wmma<InputT, ComputeT, BlockM, BlockN, BlockK>>;
-//        using MMA = Wmma<InputT, ComputeT, BlockM, BlockN, BlockK>;
 
         (*d) = MMA::exec(*a, *b, *c);
     }
 
-    // ROCWMMA_DEVICE void synchronize_workgroup()
-    // {
-    //     __syncthreads();
-    // }
+    ROCWMMA_DEVICE void synchronize_workgroup()
+    {
+//        __syncthreads();
+    }
 
 } // namespace rocwmma
 

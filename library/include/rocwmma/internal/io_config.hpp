@@ -74,18 +74,21 @@ namespace rocwmma
  * @param CoopStorer Issues cooperative store instructions for raw fragment data
  */
 
-    template <typename DataT, sycl::ext::oneapi::experimental::matrix::use Use,
-          size_t Rows, size_t Cols,
-          sycl::ext::oneapi::experimental::matrix::layout DataLayoutT>
+    template <typename MatrixT,
+              uint32_t BlockM,
+              uint32_t BlockN,
+              uint32_t BlockK,
+              typename DataT,
+              typename DataLayoutT>
     struct IOConfig
     {
-        using IOShape     = IOShape<DataT, Use, Rows, Cols, DataLayoutT>;
+        using IOShape     = IOShape<MatrixT, BlockM, BlockN, BlockK, DataT, DataLayoutT>;
         using IOTraits    = IOTraits<IOShape::BlockDim, IOShape::KDim, DataT, IOShape::VectorWidth>;
         using PackUtil    = PackUtil<DataT>;
         using Broadcaster = Broadcast<DataT, IOTraits::UnpackedSize>;
 
-      //   using MappingUtil
-      //       = MappingUtil<IOShape::BlockHeight, IOShape::BlockWidth, T, DataLayoutT>;
+        using MappingUtil
+            = MappingUtil<IOShape::BlockHeight, IOShape::BlockWidth, DataT, DataLayoutT>;
 
         using Loader = OpaqueLoad<IOShape::BlockDim,
                                   IOShape::KDim,
@@ -123,14 +126,14 @@ namespace rocwmma
  * general IOTraits, Pack/Unpack, Broadcast still available.
  *
  * */
-   //  template <size_t Rows, size_t Cols, typename DataT>
-   //  struct IOConfig<accumulator, Rows, Cols, DataT, void>
-   //  {
-   //      using IOShape     = IOShape<accumulator, Rows, Cols, DataT, void>;
-   //      using IOTraits    = IOTraits<IOShape::BlockDim, IOShape::KDim, DataT>;
-   //      using PackUtil    = PackUtil<DataT>;
-   //      using Broadcaster = Broadcast<DataT, IOTraits::UnpackedSize>;
-   //  };
+    template <uint32_t BlockM, uint32_t BlockN, uint32_t BlockK, typename DataT>
+    struct IOConfig<accumulator, BlockM, BlockN, BlockK, DataT, void>
+    {
+        using IOShape     = IOShape<accumulator, BlockM, BlockN, BlockK, DataT, void>;
+        using IOTraits    = IOTraits<IOShape::BlockDim, IOShape::KDim, DataT>;
+        using PackUtil    = PackUtil<DataT>;
+        using Broadcaster = Broadcast<DataT, IOTraits::UnpackedSize>;
+    };
 
 } // namespace rocwmma
 

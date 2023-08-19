@@ -60,13 +60,13 @@ namespace rocwmma
                           "PermuteOp is unsupported");
 
             template <typename DataT>
-            ROCWMMA_DEVICE static inline auto exec(DataT const& src, sycl::id<1>& id)
+            ROCWMMA_DEVICE static inline auto exec(DataT const& src)
             {
-                return PermuteOp::exec(src, detail::WaveSpace<>::localLaneId(id));
+                return PermuteOp::exec(src, detail::WaveSpace<>::localLaneId());
             }
 
             template <typename DataT, uint32_t VecSize>
-            ROCWMMA_DEVICE static inline auto exec(VecT<DataT, VecSize> const& src, sycl::id<1>& id)
+            ROCWMMA_DEVICE static inline auto exec(VecT<DataT, VecSize> const& src)
             {
 // TODO: Investigate static unroll validation
 #if ROCWMMA_ARCH_GFX1102
@@ -88,7 +88,7 @@ namespace rocwmma
                 return result;
 #else
 
-                return forEach(src, detail::WaveSpace<>::localLaneId(id), detail::Seq<VecSize>{});
+                return forEach(src, detail::WaveSpace<>::localLaneId(), detail::Seq<VecSize>{});
 #endif // ROCWMMA_ARCH_GFX1102
             }
         };

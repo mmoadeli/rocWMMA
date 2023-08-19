@@ -30,46 +30,9 @@
 
 namespace rocwmma
 {
-template <typename Type> struct to_hip_type;
 
-template <> struct to_hip_type<sycl::ext::oneapi::bfloat16> {
-  using type = bfloat16_t;
-};
-
-template <> struct to_hip_type<float16_t> {
-  using type = float16_t;
-};
-
-template <> struct to_hip_type<float> {
-  using type = float32_t;
-};
-
-template <> struct to_hip_type<float64_t> {
-  using type = float64_t;
-};
-
-template <> struct to_hip_type<sycl::half> {
-  using type = rocwmma::hfloat16_t;
-};
-
-template <> struct to_hip_type<int8_t> {
-  using type = rocwmma::int8_t;
-};
-
-template <> struct to_hip_type<int32_t> {
-  using type = rocwmma::int32_t;
-};
-
-template <> struct to_hip_type<uint8_t> {
-  using type = rocwmma::uint8_t;
-};
-
-template <> struct to_hip_type<uint32_t> {
-  using type = rocwmma::uint32_t;
-};
-
-
-namespace detail {
+    namespace detail
+    {
 
         template <typename InputT, typename OutputT>
         struct amdgcn_convert
