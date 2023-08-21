@@ -208,7 +208,7 @@ namespace rocwmma
               uint32_t BlockK,
               typename DataT,
               typename DataLayout = void>
-    class alignas(64) fragment 
+    class __align__(4) fragment 
     {
     public:
         struct Traits
