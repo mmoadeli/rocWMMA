@@ -39,7 +39,7 @@ namespace rocwmma
               uint32_t BlockK,
               typename DataT,
               typename DataLayoutT>
-     class alignas(64) fragment ;
+     class __align__(4) fragment;
 }
 
 namespace rocwmma
